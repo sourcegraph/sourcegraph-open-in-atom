@@ -49,7 +49,9 @@
       "properties": {
         "openInAtom.basePath": {
           "description": "The absolute path on the machine to the folder that is expected to contain all repositories.",
-          "type": "string"
+          "type": "string",
+          "format": "regex",
+          "pattern": "^\/+"
         }
       }
     }
