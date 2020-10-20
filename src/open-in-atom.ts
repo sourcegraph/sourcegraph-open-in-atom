@@ -26,7 +26,7 @@ function getOpenUrl(textDocumentUri: URL): URL {
     const repoBaseName = rawRepoName.split('/').pop() ?? ''
     const relativePath = decodeURIComponent(textDocumentUri.hash.slice('#'.length))
     const absolutePath = path.join(basePath, repoBaseName, relativePath)
-    const openUrl = new URL('atom://core/open' + absolutePath)
+    const openUrl = new URL('atom://core/open/file?filename=' + absolutePath)
 
     // This should always be true, since atom only supports file URIs
     if (sourcegraph.app.activeWindow?.activeViewComponent?.type === 'CodeEditor') {
