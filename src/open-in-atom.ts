@@ -32,9 +32,9 @@ function getOpenUrl(textDocumentUri: URL): URL {
     if (sourcegraph.app.activeWindow?.activeViewComponent?.type === 'CodeEditor') {
         const selection = sourcegraph.app.activeWindow?.activeViewComponent?.selection
         if (selection) {
-            openUrl.pathname += `&line=${selection.start.line + 1}`
+            openUrl.search += `&line=${selection.start.line + 1}`
             if (selection && selection.start.character !== 0) {
-                openUrl.pathname += `&column=${selection.start.character + 1}`
+                openUrl.search += `&column=${selection.start.character + 1}`
             }
         }
     }
