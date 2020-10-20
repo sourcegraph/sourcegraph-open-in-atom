@@ -1,87 +1,60 @@
 import * as sourcegraph from 'sourcegraph'
 import * as path from 'path'
 
-const supportedEditors: {[editor: string]: {urlPattern: string}} = {
-    vscode: {
-        urlPattern: 'vscode://file%file:%line:%col',
-    },
-    idea: {
-        urlPattern: 'idea://open?file=%file&line=%line&column=%col',
-    },
-    sublime: {
-        urlPattern: 'subl://open?url=%file&line=%line&column=%col',
-    },
-    custom: {
-        urlPattern: '',
-    },
+interface Settings {
+    'openinatom.basePath'?: string
 }
 
 function getOpenUrl(textDocumentUri: URL): URL {
-    const basePath: unknown = sourcegraph.configuration.get().value['openineditor.basePath'] as unknown
-    const editor: unknown = sourcegraph.configuration.get().value['openineditor.editor'] as unknown
-    const customUrlPattern: unknown = sourcegraph.configuration.get().value['openineditor.customUrlPattern'] as unknown
-    const learnMorePath = new URL('/extensions/sourcegraph/open-in-editor', sourcegraph.internal.sourcegraphURL.href).href
+    const basePath = sourcegraph.configuration.get<Settings>().value['openinatom.basePath']
+    const learnMorePath = new URL('/extensions/sourcegraph/open-in-atom', sourcegraph.internal.sourcegraphURL.href).href
 
     if (typeof basePath !== 'string') {
         throw new TypeError(
-            `Add \`openineditor.basePath\` to your user settings to open files in the editor. [Learn more](${learnMorePath})`
+            `Add \`openinatom.basePath\` to your user settings to open files in the editor. [Learn more](${learnMorePath})`
         )
     }
     if (!path.isAbsolute(basePath)) {
         throw new Error(
-            `\`openineditor.basePath\` value \`${basePath}\` is not an absolute path. Please correct the error in your [user settings](${new URL('/user/settings', sourcegraph.internal.sourcegraphURL.href).href}).`
-        )
-    }
-
-    if (typeof editor !== 'string') {
-        throw new TypeError(
-            `Add \`openineditor.editor\` to your user settings to open files. [Learn more](${learnMorePath})`
-        )
-    }
-    if (!Object.prototype.hasOwnProperty.call(supportedEditors, editor)) {
-        throw new TypeError(
-            `Setting \`openineditor.editor\` must be set to a valid value in your [user settings](${new URL('/user/settings', sourcegraph.internal.sourcegraphURL.href).href}) to open files. Supported editors: ` +
-            Object.keys(supportedEditors).join(',')
-        )
-    }
-    if (editor === 'custom' && typeof customUrlPattern !== 'string') {
-        throw new TypeError(
-            `Add \`openineditor.customUrlPattern\` to your user settings for custom editor to open files. [Learn more](${learnMorePath})`
+            `\`openinatom.basePath\` value \`${basePath}\` is not an absolute path. Please correct the error in your [user settings](${
+                new URL('/user/settings', sourcegraph.internal.sourcegraphURL.href).href
+            }).`
         )
     }
 
     const rawRepoName = decodeURIComponent(textDocumentUri.hostname + textDocumentUri.pathname)
-    // TODO support different folder layouts, e.g. repo nested under owner name
     const repoBaseName = rawRepoName.split('/').pop() ?? ''
     const relativePath = decodeURIComponent(textDocumentUri.hash.slice('#'.length))
     const absolutePath = path.join(basePath, repoBaseName, relativePath)
-    let line = 1;
-    let column = 1;
+    const openUrl = new URL('atom://core/open' + absolutePath)
 
+    // This should always be true, since atom only supports file URIs
     if (sourcegraph.app.activeWindow?.activeViewComponent?.type === 'CodeEditor') {
         const selection = sourcegraph.app.activeWindow?.activeViewComponent?.selection
         if (selection) {
-            line = selection.start.line + 1
+            openUrl.pathname += `&line=${selection.start.line + 1}`
             if (selection && selection.start.character !== 0) {
-                column = selection.start.character + 1
+                openUrl.pathname += `&column=${selection.start.character + 1}`
             }
         }
     }
 
-    const urlPattern = getEditorUrlPattern(editor, customUrlPattern as string)
-        .replace('%file', absolutePath)
-        .replace('%line', `${line}`)
-        .replace('%col', `${column}`)
-
-    const openUrl = new URL(urlPattern)
-
-    console.log(openUrl.href)
     return openUrl
 }
 
 export function activate(context: sourcegraph.ExtensionContext): void {
+    /**
+     * This doesn't seem to be documented, so here's where to find the URI pattern:
+     *
+     * Implementation ("core" URI handlers. Implements `openFile`, but not an equivalent `openFolder`):
+     * https://sourcegraph.com/github.com/atom/atom@320c879/-/blob/src/core-uri-handlers.js
+     *
+     * Tests ("core" host, only tests opening files):
+     * https://sourcegraph.com/github.com/atom/atom@320c879/-/blob/spec/main-process/atom-application.test.js#L677
+     */
+
     context.subscriptions.add(
-        sourcegraph.commands.registerCommand('openineditor.open.file', async (uri?: string) => {
+        sourcegraph.commands.registerCommand('openinatom.open.file', async (uri?: string) => {
             if (!uri) {
                 const viewer = sourcegraph.app.activeWindow?.activeViewComponent
                 uri = viewerUri(viewer)
@@ -96,19 +69,5 @@ export function activate(context: sourcegraph.ExtensionContext): void {
 }
 
 function viewerUri(viewer: sourcegraph.ViewComponent | undefined): string | undefined {
-    switch (viewer?.type) {
-        case 'CodeEditor':
-            return viewer.document.uri
-        case 'DirectoryViewer':
-            return viewer.directory.uri.href
-        default:
-            return undefined
-    }
-}
-
-function getEditorUrlPattern(editor: string, customUrlPattern: string): string {
-    if (editor === 'custom') {
-        return customUrlPattern
-    }
-    return supportedEditors[editor].urlPattern
+    return viewer?.type === 'CodeEditor' ? viewer.document.uri : undefined
 }
