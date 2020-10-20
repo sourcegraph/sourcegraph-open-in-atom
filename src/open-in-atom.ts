@@ -2,23 +2,22 @@ import * as sourcegraph from 'sourcegraph'
 import * as path from 'path'
 
 interface Settings {
-    'openinatom.basePath'?: string
+    'openInAtom.basePath'?: string
 }
 
 function getOpenUrl(textDocumentUri: URL): URL {
-    const basePath = sourcegraph.configuration.get<Settings>().value['openinatom.basePath']
+    const basePath = sourcegraph.configuration.get<Settings>().value['openInAtom.basePath']
     const learnMorePath = new URL('/extensions/sourcegraph/open-in-atom', sourcegraph.internal.sourcegraphURL.href).href
+    const userSettingsPath = new URL('/user/settings', sourcegraph.internal.sourcegraphURL.href).href
 
     if (typeof basePath !== 'string') {
         throw new TypeError(
-            `Add \`openinatom.basePath\` to your user settings to open files in the editor. [Learn more](${learnMorePath})`
+            `Add \`openInAtom.basePath\` to your [user settings](${userSettingsPath}) to open files in the editor. [Learn more](${learnMorePath})`
         )
     }
     if (!path.isAbsolute(basePath)) {
         throw new Error(
-            `\`openinatom.basePath\` value \`${basePath}\` is not an absolute path. Please correct the error in your [user settings](${
-                new URL('/user/settings', sourcegraph.internal.sourcegraphURL.href).href
-            }).`
+            `\`openInAtom.basePath\` value \`${basePath}\` is not an absolute path. Please correct the error in your [user settings](${userSettingsPath}).`
         )
     }
 
@@ -32,9 +31,10 @@ function getOpenUrl(textDocumentUri: URL): URL {
     if (sourcegraph.app.activeWindow?.activeViewComponent?.type === 'CodeEditor') {
         const selection = sourcegraph.app.activeWindow?.activeViewComponent?.selection
         if (selection) {
-            openUrl.search += `&line=${selection.start.line + 1}`
+            openUrl.searchParams.set('line', (selection.start.line + 1).toString())
+
             if (selection && selection.start.character !== 0) {
-                openUrl.search += `&column=${selection.start.character + 1}`
+                openUrl.searchParams.set('column', (selection.start.character + 1).toString())
             }
         }
     }
@@ -54,7 +54,7 @@ export function activate(context: sourcegraph.ExtensionContext): void {
      */
 
     context.subscriptions.add(
-        sourcegraph.commands.registerCommand('openinatom.open.file', async (uri?: string) => {
+        sourcegraph.commands.registerCommand('openInAtom.open.file', async (uri?: string) => {
             if (!uri) {
                 const viewer = sourcegraph.app.activeWindow?.activeViewComponent
                 uri = viewerUri(viewer)
