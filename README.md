@@ -10,6 +10,6 @@ Adds a button at the top of files in both Sourcegraph app and code hosts like Gi
 
 ## Settings
 
-- `openinatom.basePath`: The absolute path on your computer where your git repositories live. This extension requires all git repos to be already cloned under this path with their original names. `"/Users/yourusername/src"` is a valid absolute path, while `"~/src"` is not.
+- `openInAtom.basePath`: The absolute path on your computer where your git repositories live. This extension requires all git repos to be already cloned under this path with their original names. `"/Users/yourusername/src"` is a valid absolute path, while `"~/src"` is not.
 
 If you're using Atom on Linux, you should [configure URI handling yourself](https://flight-manual.atom.io/hacking-atom/sections/handling-uris/#linux-support).
