@@ -1,4 +1,4 @@
-# open-in-editor (Sourcegraph extension)
+# Open in Atom (Sourcegraph extension)
 
 Adds a button at the top of files in both Sourcegraph app and code hosts like GitHub (when the Sourcegraph browser extension is installed) that will open the current file in Atom. 
 
