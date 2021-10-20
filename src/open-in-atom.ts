@@ -4,13 +4,26 @@ import * as path from 'path'
 interface Settings {
     'openInAtom.basePath'?: string
     'openInAtom.replacements'?: Record<string, string>
+    'openInAtom.osPaths'?: Record<string, string>
 }
 
 function getOpenUrl(textDocumentUri: URL): URL {
-    const basePath = sourcegraph.configuration.get<Settings>().value['openInAtom.basePath']
+    let basePath = sourcegraph.configuration.get<Settings>().value['openInAtom.basePath']
     const replacements = sourcegraph.configuration.get().value['openInAtom.replacements'] as Record<string, string>
+    const osPaths: Record<string, string> = sourcegraph.configuration.get().value['openInAtom.osPaths'] as Record<string, string>
     const learnMorePath = new URL('/extensions/sourcegraph/open-in-atom', sourcegraph.internal.sourcegraphURL.href).href
     const userSettingsPath = new URL('/user/settings', sourcegraph.internal.sourcegraphURL.href).href
+
+    // check platform and use assigned path when available;
+    if(osPaths){
+        if (navigator.userAgent.includes('Win') && osPaths.windows) {
+            basePath = osPaths.windows;
+        } else if (navigator.userAgent.includes('Mac') && osPaths.mac) {
+            basePath = osPaths.mac;
+        } else if (navigator.userAgent.includes('Linux') && osPaths.linux) {
+            basePath = osPaths.linux;
+        }
+    }
 
     if (typeof basePath !== 'string') {
         throw new TypeError(

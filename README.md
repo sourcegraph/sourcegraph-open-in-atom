@@ -16,6 +16,8 @@ Adds a button to the Sourcegraph's extension panel and at the top of files in co
 
 - `openInAtom.replacements`: [OPTIONAL] Set to an object that includes pairs of strings, where each key will be replaced by its value in the final url. The key can be a string or a RegExp, and the value must be a string. For example, using `"openInAtom.replacements": {"(?<=Documents\/)(.*[\\\/])": "sourcegraph-$1"}` will add `sourcegraph-` in front of the string that matches the `(?<=Documents\/)(.*[\\\/])` RegExp pattern, while `"openInAtom.replacements": {"sourcegraph-": ""}` will remove `sourcegraph-` from the final URL.
 
+- `openInAtom.osPaths`: [OPTIONAL] Object. The extension uses the assigned path for the detected Operating System when available. If no platform is detected then we will keep using the basePath provided with `openInAtom.basePath`. Currently support `"windows"`, `"mac"`, and `"linux"` as keys.
+
 
 ## Examples
 
@@ -26,10 +28,27 @@ To open repository files in your Documents directory:
 ```json
 {
   "extensions": {
-    "sourcegraph/open-in-sublime": true,
+    "sourcegraph/open-in-atom": true,
   },
   // where the cloned git repositories are located
   "openInAtom.basePath": "/Users/USERNAME/Documents/"
+}
+```
+
+### All OS
+
+```json
+{
+  "extensions": {
+    "sourcegraph/open-in-atom": true
+  },
+  "openInAtom.osPaths": {
+    "windows": "/C:/Users/USERNAME/folder/",
+    "mac": "/Users/USERNAME/folder/",
+    "linux": "/home/USERNAME/folder/"
+  },
+  // required -set basePath as fallback path when no operation system is detected
+  "openInAtom.basePath": "/Users/USERNAME/Documents/",
 }
 ```
 
